@@ -10,6 +10,8 @@ services:
       - ./chatapp_backend/.env  # Ensure you have an environment file for Django settings
     depends_on:
       - db
+    command: >
+      sh -c "sleep 10 && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     networks:
       - chat_network
 
