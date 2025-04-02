@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: chatapp_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: chatapp_db
+      MYSQL_USER: chatapp_user
+      MYSQL_PASSWORD: ProjP@ssw0rd!
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      retries: 5
+      start_period: 10s
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chatapp_backend
+    restart: always
+    command: >
+      sh -c "sleep 10 && python manage.py migrate && gunicorn chatapp_backend.wsgi:application --bind 0.0.0.0:8000"
+    volumes:
+      - .:/app
+      - ./staticfiles:/app/staticfiles
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: chatapp_db
+      DB_USER: chatapp_user
+      DB_PASSWORD: ProjP@ssw0rd!
+
+  frontend:
+    build:
+      context: ../chatapp_frontend
+      dockerfile: Dockerfile
+    container_name: chatapp_frontend
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    environment:
+      - VITE_API_BASE_URL=http://backend:8000"
+
+volumes:
+  mysql-data:
+    driver: local
