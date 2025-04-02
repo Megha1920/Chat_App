@@ -42,6 +42,8 @@ services:
       DB_NAME: chatapp_db
       DB_USER: chatapp_user
       DB_PASSWORD: ProjP@ssw0rd!
+      GOOGLE_CLIENT_ID: "1055989923258-vvjhdbjqib8kj83nv8mbfbucofn7jcdh.apps.googleusercontent.com"
+      GOOGLE_SECRET: "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"
 
   frontend:
     build:
