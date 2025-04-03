@@ -22,15 +22,15 @@ services:
 
   backend:
     build:
-      context: .
+      context: ./chatapp_backend  # Updated path
       dockerfile: Dockerfile
     container_name: chatapp_backend
     restart: always
     command: >
       sh -c "sleep 10 && python manage.py migrate && gunicorn chatapp_backend.wsgi:application --bind 0.0.0.0:8000"
     volumes:
-      - .:/app
-      - ./staticfiles:/app/staticfiles
+      - ./chatapp_backend:/app  # Updated path
+      - ./chatapp_backend/staticfiles:/app/staticfiles
     ports:
       - "8000:8000"
     depends_on:
@@ -42,10 +42,12 @@ services:
       DB_NAME: chatapp_db
       DB_USER: chatapp_user
       DB_PASSWORD: ProjP@ssw0rd!
+      GOOGLE_CLIENT_ID: "1055989923258-vvjhdbjqib8kj83nv8mbfbucofn7jcdh.apps.googleusercontent.com"
+      GOOGLE_SECRET: "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"
 
   frontend:
     build:
-      context: ../chatapp_frontend
+      context: ./chatapp_frontend  # Updated path
       dockerfile: Dockerfile
     container_name: chatapp_frontend
     restart: always
@@ -54,7 +56,10 @@ services:
     depends_on:
       - backend
     environment:
-      - VITE_API_BASE_URL=http://backend:8000"
+      - VITE_API_BASE_URL=http://backend:8000
+    volumes:
+      - ./chatapp_frontend:/app  # Updated path
+      - /app/node_modules  # Prevent overwriting installed dependencies
 
 volumes:
   mysql-data:
