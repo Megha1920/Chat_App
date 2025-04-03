@@ -51,8 +51,9 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
-
     'rest_framework',
+    'rest_framework_simplejwt', 
+    'rest_framework_simplejwt.token_blacklist',
     'rest_framework.authtoken',
     'dj_rest_auth',
     'dj_rest_auth.registration',
@@ -166,18 +167,38 @@ ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_LOGOUT_ON_GET = True
 
 # REST Framework authentication settings
+REST_USE_JWT = True
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication', 
     
 
 
     )
 }
+REST_AUTH_SERIALIZERS = {
+    'TOKEN_SERIALIZER': 'dj_rest_auth.serializers.JWTSerializer',
+}
 
 # Enable JWT Authentication
-REST_USE_JWT = True
+
+
+from datetime import timedelta
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),  # Token valid for 1 day
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),  # Refresh token valid for 7 days
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "SIGNING_KEY": SECRET_KEY,  # Uses Django's secret key
+    "AUTH_HEADER_TYPES": ("Bearer",),  # Authorization: Bearer <token>
+}
+
+
+
+
+
 
 # Google Social Login
 SOCIALACCOUNT_PROVIDERS = {

@@ -1,15 +1,19 @@
 from django.contrib import admin
 from django.urls import path, include
-from .views import GoogleLogin  # Import your Google login view
+from .views import GoogleLogin,LogoutView  # Import your Google login view
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('allauth.urls')),
-
-    # Auth endpoints
     path('auth/', include('dj_rest_auth.urls')),
     path('auth/registration/', include('dj_rest_auth.registration.urls')),
-
-    # ✅ Add Google login manually
     path('auth/social/google/', GoogleLogin.as_view(), name='google_login'),
+    path('auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+     path('auth/logout/', LogoutView.as_view(), name='logout'),
 ]

@@ -46,17 +46,20 @@ services:
       GOOGLE_SECRET: "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"
 
   frontend:
-    build:
-      context: ../chatapp_frontend
-      dockerfile: Dockerfile
-    container_name: chatapp_frontend
-    restart: always
-    ports:
-      - "3000:80"
-    depends_on:
-      - backend
-    environment:
-      - VITE_API_BASE_URL=http://backend:8000"
+      build:
+        context: ../chatapp_frontend
+        dockerfile: Dockerfile
+      container_name: chatapp_frontend
+      restart: always
+      ports:
+        - "3000:80"
+      depends_on:
+        - backend
+      environment:
+        - VITE_API_BASE_URL=http://backend:8000
+      volumes:
+        - ../chatapp_frontend:/app  # Mount the local frontend folder to container
+        - /app/node_modules  # Prevent overwriting installed dependencies
 
 volumes:
   mysql-data:
