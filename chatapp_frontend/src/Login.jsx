@@ -27,7 +27,8 @@ const navigate=useNavigate()
     
 
         // ✅ Store JWT token
-        localStorage.setItem("token", res.data);
+        localStorage.setItem("token", res.data.access);  // Store access token
+        localStorage.setItem("refresh_token", res.data.refresh);  // Store refresh token
 
         // ✅ Redirect to Chat Page
         navigate('/chat');

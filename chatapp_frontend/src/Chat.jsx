@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+
 
 const Chat = () => {
+ 
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
 
@@ -11,31 +14,69 @@ const Chat = () => {
     { name: "Charlie", img: "https://via.placeholder.com/50", message: "Let's catch up soon!", unread: 1 },
     { name: "Diana", img: "https://via.placeholder.com/50", message: "Good morning!", unread: 0 },
     { name: "Eve", img: "https://via.placeholder.com/50", message: "See you later!", unread: 3 },
-    { name: "Frank", img: "https://via.placeholder.com/50", message: "I'll call you back.", unread: 0 }
+    { name: "Frank", img: "https://via.placeholder.com/50", message: "I'll call you back.", unread: 0 },
   ];
+
   useEffect(() => {
-    // ✅ Check if user is "logged in"
+    console.log("Chat component loaded");
     const token = localStorage.getItem("token");
     if (!token) {
-      navigate("/"); // Redirect to login if no token
+      navigate("/", { replace: true });
     } else {
-      setUser({ name: "Demo User" }); // Dummy user info
+      setUser({ name: "Demo User" });
     }
+
+    // Prevent back nav
+    // window.history.replaceState(null, "", window.location.href);
   }, [navigate]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token"); // Clear token
-    navigate("/"); // Redirect to login
+  const handleLogout = async () => {
+    const refreshToken = localStorage.getItem("refresh_token");
+  
+    if (!refreshToken) {
+      alert("No refresh token found. Please log in again.");
+      return;
+    }
+  
+    try {
+      await axios.post(
+        "http://localhost:8000/auth/token/blacklist/",
+        { refresh: refreshToken },
+        {
+          headers: {
+            "Authorization": `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+  
+      console.log("Logged out successfully.");
+    } catch (error) {
+      console.error("Logout failed:", error.response?.data || error.message);
+      alert("Logout failed.");
+    }
+  
+    // Clear tokens and redirect
+    localStorage.removeItem("token");
+    localStorage.removeItem("refresh_token");
+    navigate("/", { replace: true });
   };
+  
 
   return (
     <div className="container-fluid vh-100 bg-light">
       <div className="row h-100">
-        {/* Sidebar Chat List */}
-        <div className="col-md-4 border-end p-3 bg-white overflow-auto chat-list" style={{ maxHeight: "100vh" }}>
+        <div className="col-md-4 border-end p-3 bg-white overflow-auto" style={{ maxHeight: "100vh" }}>
           <div className="d-flex justify-content-between align-items-center mb-3">
             <h5 className="fw-bold text-primary">Chats</h5>
-            <button className="btn btn-outline-danger btn-sm" onClick={handleLogout}>Logout</button>
+            <button className="btn btn-outline-danger btn-sm" 
+  onClick={() => {
+    alert("Logout button clicked!"); 
+    console.log("Logout button clicked"); 
+    handleLogout();
+  }}>
+  Logout
+</button>
           </div>
           <div className="list-group">
             {dummyUsers.map((chatUser, index) => (
@@ -51,9 +92,8 @@ const Chat = () => {
           </div>
         </div>
 
-        {/* Chat Box */}
         <div className="col-md-8 p-3 d-flex flex-column">
-          <div className="border rounded p-3 bg-white flex-grow-1 overflow-auto chat-box" style={{ maxHeight: "80vh" }}>
+          <div className="border rounded p-3 bg-white flex-grow-1 overflow-auto" style={{ maxHeight: "80vh" }}>
             <div className="text-start bg-secondary text-white p-2 rounded my-1 w-75">
               <strong>Friend:</strong> Hello!
             </div>
@@ -70,5 +110,5 @@ const Chat = () => {
     </div>
   );
 };
-
 export default Chat;
+
