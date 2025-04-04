@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import Login from "./Login";
 import Chat from "./Chat";
+import PrivateRoute from "./PrivateRoute"; 
 
 function App() {
   return (
@@ -10,7 +11,14 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<Login />} />
-          <Route path="/chat" element={<Chat />} />
+          <Route
+  path="/chat"
+  element={
+    <PrivateRoute>
+      <Chat />
+    </PrivateRoute>
+  }
+/>
         </Routes>
       </Router>
     </GoogleOAuthProvider>
@@ -18,3 +26,6 @@ function App() {
 }
 
 export default App;
+
+
+

@@ -24,3 +24,4 @@ cryptography
 social-auth-core
 social-auth-app-django
 dj-rest-auth[social]
+django-cors-headers
