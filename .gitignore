@@ -5,7 +5,8 @@ dist/
 
 # Environment
 .env
-
+__pycache__/
+*.py[cod]
 # Logs
 logs/
 *.log
