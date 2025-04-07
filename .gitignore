@@ -1,0 +1,23 @@
+# Node.js
+node_modules/
+dist/
+.vite/
+
+# Environment
+.env
+
+# Logs
+logs/
+*.log
+
+# Dependency directories
+chatapp_backend/venv/
+
+# Docker
+*.pid
+*.sock
+
+
+# OS
+.DS_Store
+Thumbs.db
