@@ -18,4 +18,5 @@ urlpatterns = [
     path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('auth/logout/', LogoutView.as_view(), name='logout'),
     path("auth/token/blacklist/", TokenBlacklistView.as_view(), name="token_blacklist"),
+    path('chat/',include('chat.urls'))
 ]

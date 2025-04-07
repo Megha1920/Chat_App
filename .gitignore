@@ -1,0 +1,28 @@
+# Node.js
+node_modules/
+dist/
+.vite/
+
+# Environment
+.env
+__pycache__/
+*.py[cod]
+# Logs
+logs/
+*.log
+
+# Dependency directories
+chatapp_backend/venv/
+
+# Docker
+*.pid
+*.sock
+
+
+# OS
+.DS_Store
+Thumbs.db
+
+.vscode/
+
+venv/
