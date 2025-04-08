@@ -11,7 +11,7 @@ class UserListView(APIView):
         data = [
             {
                 "id": user.id,
-                "username": user.username,
+                "username": user.first_name,
                 "email": user.email
             }
             for user in users
