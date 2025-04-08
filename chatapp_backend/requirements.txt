@@ -25,3 +25,6 @@ social-auth-core
 social-auth-app-django
 dj-rest-auth[social]
 django-cors-headers
+channels==4.0.0
+channels_redis==4.2.0
+daphne==4.1.0
