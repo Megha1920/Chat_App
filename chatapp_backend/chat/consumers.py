@@ -19,7 +19,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         data = json.loads(text_data)
-        message = data.get('message')
+        message = data.get('text')  # Changed from 'message' to 'text'
 
         if message:
             await self.save_message(self.user.id, int(self.chat_with), message)
@@ -29,9 +29,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 {
                     'type': 'chat_message',
                     'message': message,
-                    'sender_id': self.user.id  # Send sender_id to frontend for alignment
+                    'sender_id': self.user.id
                 }
             )
+
 
 
     async def chat_message(self, event):

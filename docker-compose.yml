@@ -20,21 +20,36 @@ services:
       retries: 5
       start_period: 10s
 
+  redis:
+    image: redis:7
+    container_name: chatapp_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+
   backend:
     build:
-      context: ./chatapp_backend  # Updated path
+      context: ./chatapp_backend
       dockerfile: Dockerfile
     container_name: chatapp_backend
     restart: always
     command: >
-      sh -c "sleep 10 && python manage.py migrate && gunicorn chatapp_backend.wsgi:application --bind 0.0.0.0:8000"
+      sh -c "sleep 10 && python manage.py migrate &&
+      daphne -b 0.0.0.0 -p 8000 chatapp_backend.asgi:application"
     volumes:
-      - ./chatapp_backend:/app  # Updated path
+      - ./chatapp_backend:/app
       - ./chatapp_backend/staticfiles:/app/staticfiles
     ports:
       - "8000:8000"
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     environment:
       DB_HOST: db
@@ -44,10 +59,11 @@ services:
       DB_PASSWORD: ProjP@ssw0rd!
       GOOGLE_CLIENT_ID: "1055989923258-vvjhdbjqib8kj83nv8mbfbucofn7jcdh.apps.googleusercontent.com"
       GOOGLE_SECRET: "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"
+      DJANGO_SETTINGS_MODULE: chatapp_backend.settings
 
   frontend:
     build:
-      context: ./chatapp_frontend  # Updated path
+      context: ./chatapp_frontend
       dockerfile: Dockerfile
     container_name: chatapp_frontend
     restart: always
@@ -57,11 +73,12 @@ services:
       - backend
     environment:
       - VITE_API_BASE_URL=http://backend:8000
+      - VITE_WS_BASE_URL=ws://backend:8000
     volumes:
-      - ./chatapp_frontend:/app  # Updated path
-      - node_modules:/app/node_modules  # Prevent overwriting installed dependencies
+      - ./chatapp_frontend:/app
+      - node_modules:/app/node_modules
 
 volumes:
   mysql-data:
     driver: local
-  node_modules: {} 
+  node_modules: {}
