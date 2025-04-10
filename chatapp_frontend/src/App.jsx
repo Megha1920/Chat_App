@@ -5,6 +5,7 @@ import Login from "./Login";
 import Chat from "./Chat";
 import PrivateRoute from "./PrivateRoute"; 
 
+
 function App() {
   return (
     <GoogleOAuthProvider clientId="1055989923258-vvjhdbjqib8kj83nv8mbfbucofn7jcdh.apps.googleusercontent.com">
@@ -19,6 +20,7 @@ function App() {
     </PrivateRoute>
   }
 />
+
         </Routes>
       </Router>
     </GoogleOAuthProvider>

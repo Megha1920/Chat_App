@@ -58,7 +58,8 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'dj_rest_auth',
     'dj_rest_auth.registration',
-    'chat'
+    'chat',
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -91,9 +92,19 @@ TEMPLATES = [
         },
     },
 ]
+ASGI_APPLICATION = 'chatapp_backend.asgi.application'
 
 WSGI_APPLICATION = 'chatapp_backend.wsgi.application'
 
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [("redis", 6379)],
+        },
+    },
+}
 
 
 
