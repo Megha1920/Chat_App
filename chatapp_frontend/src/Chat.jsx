@@ -10,36 +10,32 @@ const Chat = () => {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const wsRef = useRef(null);
 
-  function isFromSelf(senderId) {
-    const currentUserId = userRef.current?.id;
-    console.log("🔍 senderId:", senderId, " | currentUserId:", currentUserId);
-    return String(senderId) === String(currentUserId);
-  }
-  
+  const isFromSelf = (senderId) => {
+    return String(senderId) === String(userRef.current?.id);
+  };
 
+  // Fetch current user
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
-      window.location.href = "/";
-    } else {
-      axios
-        .get("http://localhost:8000/auth/user/", {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        .then((res) => {
-          setUser(res.data);
-          userRef.current = res.data;
-          fetchUsers(token);
-        })
-        .catch(() => {
-          window.location.href = "/";
-        });
+      return (window.location.href = "/");
     }
-  }, []);
 
-  useEffect(() => {
-    userRef.current = user;
-  }, [user]);
+    axios
+      .get("http://localhost:8000/auth/user/", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => {
+        const userWithId = { ...res.data, id: res.data.pk }; // ✅ Normalize pk → id
+        setUser(userWithId);
+        userRef.current = userWithId;
+        console.log("👤 Logged in as:", userWithId);
+        fetchUsers(token);
+      })
+      .catch(() => {
+        window.location.href = "/";
+      });
+  }, []);
 
   const fetchUsers = async (token) => {
     try {
@@ -56,12 +52,15 @@ const Chat = () => {
         }))
       );
     } catch (error) {
-      console.error("Failed to fetch users", error);
+      console.error("❌ Failed to fetch users:", error);
+      alert("Failed to fetch users. Check your server or token.");
     }
   };
 
   const fetchMessages = async (userId) => {
     const token = localStorage.getItem("token");
+    if (!user || !token) return;
+
     try {
       const response = await axios.get(
         `http://localhost:8000/chat/messages/${userId}/`,
@@ -70,14 +69,25 @@ const Chat = () => {
         }
       );
 
-      const formattedMessages = response.data.map((msg) => ({
-        message: msg.content || msg.text || msg.message,
-        from_self: isFromSelf(msg.sender),
-      }));
+      const formattedMessages = response.data.map((msg) => {
+        const fromSelf = String(msg.sender) === String(userRef.current?.id);
+        console.log(
+          `📩 Message ID: ${msg.id}, Sender: ${msg.sender}, You: ${userRef.current?.id}, from_self: ${fromSelf}`
+        );
+        return {
+          id: msg.id,
+          message: msg.content || msg.text || msg.message,
+          from_self: fromSelf,
+          sender: msg.sender,
+          receiver: msg.receiver,
+          timestamp: msg.timestamp,
+        };
+      });
 
       setMessages(formattedMessages);
+      console.log("✅ Fetched Messages:", formattedMessages);
     } catch (error) {
-      console.error("Failed to fetch messages", error);
+      console.error("❌ Failed to fetch messages:", error);
     }
   };
 
@@ -103,16 +113,13 @@ const Chat = () => {
 
     socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      console.log("📥 Incoming WebSocket Message:", data);
-    
       const incomingMessage = {
         message: data.message || data.content,
         from_self: isFromSelf(data.sender_id),
       };
-    
+      console.log("📥 WebSocket incoming:", incomingMessage);
       setMessages((prev) => [...prev, incomingMessage]);
     };
-    
 
     socket.onerror = (e) => console.error("WebSocket error:", e);
     socket.onclose = () => console.log("❌ WebSocket closed");
@@ -121,11 +128,11 @@ const Chat = () => {
   }, [selectedUserId, user]);
 
   const handleSend = () => {
-    if (!newMessage || !selectedUserId) return;
+    if (!newMessage.trim() || !selectedUserId) return;
 
     const messageData = {
       receiver: selectedUserId,
-      text: newMessage,
+      text: newMessage.trim(),
     };
 
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
@@ -152,10 +159,7 @@ const Chat = () => {
 
   const handleLogout = async () => {
     const refreshToken = localStorage.getItem("refresh_token");
-    if (!refreshToken) {
-      alert("No refresh token found.");
-      return;
-    }
+    if (!refreshToken) return alert("No refresh token found.");
 
     try {
       await axios.post(
@@ -172,8 +176,8 @@ const Chat = () => {
       localStorage.removeItem("refresh_token");
       window.location.href = "/";
     } catch (error) {
-      alert("Logout failed.");
       console.error("Logout error:", error);
+      alert("Logout failed.");
     }
   };
 
@@ -181,10 +185,7 @@ const Chat = () => {
     <div className="container-fluid vh-100 bg-light">
       <div className="row h-100">
         {/* User List */}
-        <div
-          className="col-md-4 border-end p-3 bg-white overflow-auto"
-          style={{ maxHeight: "100vh" }}
-        >
+        <div className="col-md-4 border-end p-3 bg-white overflow-auto">
           <div className="d-flex justify-content-between align-items-center mb-3">
             <h5 className="fw-bold text-primary">Chats</h5>
             <button
@@ -195,9 +196,9 @@ const Chat = () => {
             </button>
           </div>
           <div className="list-group">
-            {users.map((chatUser, index) => (
+            {users.map((chatUser) => (
               <div
-                key={index}
+                key={chatUser.id}
                 className={`list-group-item d-flex align-items-center p-3 ${
                   selectedUserId === chatUser.id
                     ? "active bg-primary text-white"
@@ -230,26 +231,36 @@ const Chat = () => {
                 className="border rounded p-3 bg-white flex-grow-1 overflow-auto"
                 style={{ maxHeight: "80vh" }}
               >
-                {messages.map((msg, index) => (
-                  <div
-                    key={index}
-                    className={`d-flex mb-2 ${
-                      msg.from_self
-                        ? "justify-content-end"
-                        : "justify-content-start"
-                    }`}
-                  >
+                {messages.map((msg, index) => {
+                  console.log(
+                    `🖥️ Rendering msg[${index}] => "${msg.message}" | from_self: ${msg.from_self}`
+                  );
+                  return (
                     <div
-                      className={`p-2 rounded ${
+                      key={index}
+                      className={`d-flex mb-2 ${
                         msg.from_self
-                          ? "bg-primary text-white"
-                          : "bg-light text-dark"
+                          ? "justify-content-end"
+                          : "justify-content-start"
                       }`}
                     >
-                      {msg.message}
+                      <div
+                        className={`p-2 rounded ${
+                          msg.from_self
+                            ? "bg-primary text-white"
+                            : "bg-light text-dark"
+                        }`}
+                        style={{
+                          maxWidth: "60%",
+                          border: "1px solid #ccc",
+                          wordWrap: "break-word",
+                        }}
+                      >
+                        {msg.message}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               <div className="mt-3 d-flex">
                 <input
