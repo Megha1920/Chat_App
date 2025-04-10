@@ -10,12 +10,15 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Q 
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 class UserListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        users = User.objects.exclude(id=request.user.id)
+        users = User.objects.filter(is_superuser=False).exclude(id=request.user.id)
         data = [
             {
                 "id": user.id,
@@ -25,7 +28,6 @@ class UserListView(APIView):
             for user in users
         ]
         return Response(data)
-    
 
 class ChatHistoryView(APIView):
     permission_classes = [IsAuthenticated]
