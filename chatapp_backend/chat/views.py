@@ -5,7 +5,6 @@ from django.contrib.auth.models import User
 from .models import Message
 from .serializers import MessageSerializer
 from django.contrib.auth.models import User
-from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -40,40 +39,3 @@ class ChatHistoryView(APIView):
         serializer = MessageSerializer(messages, many=True)
         return Response(serializer.data)
     
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from django.contrib.auth.models import User
-from .models import Message
-import traceback
-from rest_framework import status
-from rest_framework.exceptions import ValidationError
-
-class SendMessageView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        try:
-            receiver_id = request.data.get("receiver")
-            text = request.data.get("text")
-
-            if not receiver_id or not text:
-                return Response({"error": "Missing receiver or text"}, status=status.HTTP_400_BAD_REQUEST)
-
-            try:
-                receiver = User.objects.get(id=receiver_id)
-            except User.DoesNotExist:
-                return Response({"error": "Receiver not found"}, status=status.HTTP_404_NOT_FOUND)
-
-            message = Message.objects.create(
-                sender=request.user,
-                receiver=receiver,
-                content=text
-            )
-
-            return Response({"status": "Message sent"})
-        
-        except Exception as e:
-            traceback.print_exc()
-            return Response({"error": str(e)}, status=500)
