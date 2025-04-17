@@ -9,6 +9,7 @@ const Chat = () => {
   const [newMessage, setNewMessage] = useState("");
   const [selectedUserId, setSelectedUserId] = useState(null);
   const wsRef = useRef(null);
+  const prevSelectedUserIdRef = useRef(null); // ✅ Add this to track previous user
 
   const isFromSelf = (senderId) => {
     return String(senderId) === String(userRef.current?.id);
@@ -26,7 +27,7 @@ const Chat = () => {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
-        const userWithId = { ...res.data, id: res.data.pk }; // ✅ Normalize pk → id
+        const userWithId = { ...res.data, id: res.data.pk };
         setUser(userWithId);
         userRef.current = userWithId;
         console.log("👤 Logged in as:", userWithId);
@@ -69,20 +70,14 @@ const Chat = () => {
         }
       );
 
-      const formattedMessages = response.data.map((msg) => {
-        const fromSelf = String(msg.sender) === String(userRef.current?.id);
-        console.log(
-          `📩 Message ID: ${msg.id}, Sender: ${msg.sender}, You: ${userRef.current?.id}, from_self: ${fromSelf}`
-        );
-        return {
-          id: msg.id,
-          message: msg.content || msg.text || msg.message,
-          from_self: fromSelf,
-          sender: msg.sender,
-          receiver: msg.receiver,
-          timestamp: msg.timestamp,
-        };
-      });
+      const formattedMessages = response.data.map((msg) => ({
+        id: msg.id,
+        message: msg.content || msg.text || msg.message,
+        from_self: String(msg.sender) === String(userRef.current?.id),
+        sender: msg.sender,
+        receiver: msg.receiver,
+        timestamp: msg.timestamp,
+      }));
 
       setMessages(formattedMessages);
       console.log("✅ Fetched Messages:", formattedMessages);
@@ -100,12 +95,19 @@ const Chat = () => {
   useEffect(() => {
     if (!selectedUserId || !user) return;
 
+    // ✅ Prevent WebSocket re-init if same user is selected
+    if (prevSelectedUserIdRef.current === selectedUserId) return;
+    prevSelectedUserIdRef.current = selectedUserId;
+
     const token = localStorage.getItem("token");
-    const wsBaseUrl =
-      import.meta.env.VITE_WS_BASE_URL || "ws://localhost:8000";
+    const wsBaseUrl = import.meta.env.VITE_WS_BASE_URL || "ws://localhost:8000";
     const socket = new WebSocket(
       `${wsBaseUrl}/ws/chat/${selectedUserId}/?token=${token}`
     );
+
+    if (wsRef.current) {
+      wsRef.current.close(); // ✅ Close existing socket first
+    }
 
     wsRef.current = socket;
 
@@ -148,9 +150,7 @@ const Chat = () => {
       event.stopPropagation();
     }
 
-    if (wsRef.current) {
-      wsRef.current.close();
-    }
+    if (id === selectedUserId) return; // ✅ Avoid re-setting same user
 
     setSelectedUserId(id);
     setNewMessage("");
@@ -188,10 +188,7 @@ const Chat = () => {
         <div className="col-md-4 border-end p-3 bg-white overflow-auto">
           <div className="d-flex justify-content-between align-items-center mb-3">
             <h5 className="fw-bold text-primary">Chats</h5>
-            <button
-              className="btn btn-outline-danger btn-sm"
-              onClick={handleLogout}
-            >
+            <button className="btn btn-outline-danger btn-sm" onClick={handleLogout}>
               Logout
             </button>
           </div>
@@ -200,9 +197,7 @@ const Chat = () => {
               <div
                 key={chatUser.id}
                 className={`list-group-item d-flex align-items-center p-3 ${
-                  selectedUserId === chatUser.id
-                    ? "active bg-primary text-white"
-                    : ""
+                  selectedUserId === chatUser.id ? "active bg-primary text-white" : ""
                 }`}
                 onClick={(e) => handleUserClick(chatUser.id, e)}
                 style={{ cursor: "pointer" }}
@@ -231,36 +226,27 @@ const Chat = () => {
                 className="border rounded p-3 bg-white flex-grow-1 overflow-auto"
                 style={{ maxHeight: "80vh" }}
               >
-                {messages.map((msg, index) => {
-                  console.log(
-                    `🖥️ Rendering msg[${index}] => "${msg.message}" | from_self: ${msg.from_self}`
-                  );
-                  return (
+                {messages.map((msg, index) => (
+                  <div
+                    key={index}
+                    className={`d-flex mb-2 ${
+                      msg.from_self ? "justify-content-end" : "justify-content-start"
+                    }`}
+                  >
                     <div
-                      key={index}
-                      className={`d-flex mb-2 ${
-                        msg.from_self
-                          ? "justify-content-end"
-                          : "justify-content-start"
+                      className={`p-2 rounded ${
+                        msg.from_self ? "bg-primary text-white" : "bg-light text-dark"
                       }`}
+                      style={{
+                        maxWidth: "60%",
+                        border: "1px solid #ccc",
+                        wordWrap: "break-word",
+                      }}
                     >
-                      <div
-                        className={`p-2 rounded ${
-                          msg.from_self
-                            ? "bg-primary text-white"
-                            : "bg-light text-dark"
-                        }`}
-                        style={{
-                          maxWidth: "60%",
-                          border: "1px solid #ccc",
-                          wordWrap: "break-word",
-                        }}
-                      >
-                        {msg.message}
-                      </div>
+                      {msg.message}
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
               <div className="mt-3 d-flex">
                 <input
